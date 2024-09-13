@@ -99,16 +99,26 @@ def code_reviewing(project,persistent_memory):
     programmer = Agent("Programmer")
     code_reviewer = Agent("CodeReviewer")
     cpo = Agent("CPO")
-    chat_history = []
-    query = "Please review the code for the project required by the customer. Please use the system design provided to you to review the code and provide feedback to me."
-    query_additional = ""
-    response = chat(query,query_additional, programmer, code_reviewer, project, persistent_memory, chatter, chat_history)
-    chat_history.append(agents_names[code_reviewer.role]+": "+response)
-    query = "Please write the code again based on the feedback provided by the code reviewer."
-    query_additional = "For the code writing, write in json format with file path as the key and code as the value."
-    response = chat(query,query_additional, cpo, programmer, project, persistent_memory, chatter, chat_history)
-    code = response
-    print("Code:",str(response))
+    n_rounds = 5
+    code = persistent_memory['code']
+    for i in range(n_rounds):
+        start_time = time.time()
+        print(f"=========\nBegin code reviewing (Round {i+1}/{n_rounds})\n=========")
+        chat_history = []
+        query = f"Please review the code for the project required by the customer. Please use the system design provided to you to review the code and provide feedback to me. The major focus it to ensure the code is correct and complete so that our customer can directly run the code without any modification. This is the {i+1}th round of a {n_rounds} rounds of code reviewing."
+        query_additional = 'If you are satisfied with the code because the code is correct and complete, please answer with "<ReviewComplete>" tag. If you are not satisfied with the code because the code is not correct or complete, please provide your feedback without "<ReviewNotComplete>" tag.'
+        response = chat(query,query_additional, cpo, code_reviewer, project, persistent_memory, chatter, chat_history)
+        if "<ReviewComplete>" in response:
+            print("Code reviewing is complete.")
+            break
+        #chat_history.append(agents_names[code_reviewer.role]+": "+response)
+        query = "Please write the code again based on the feedback provided by the code reviewer."
+        query_additional = "For the code writing, write in json format with file path as the key and code as the value."
+        response = chat(query,query_additional, cpo, programmer, project, persistent_memory, chatter, chat_history)
+        code = response
+        persistent_memory['code'] = code
+        end_time = time.time()
+        print(f"Time taken: {end_time-start_time} seconds")
     return code
 
 def readme_writing(project,persistent_memory):
@@ -180,10 +190,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='argparse')
     parser.add_argument('--project', type=str, default="Develop a snake game with pygame",
                     help="The project you want us to work on")
-    parser.add_argument('--clarification', type=bool, default=True,
+    parser.add_argument('--clarification', type=bool, default=False,
                     help="Whether you want to ask the customer for clarification")
 
     args = parser.parse_args()
+
+    f = open("conversation_history.txt", "w")
+    f.close()
 
     project = args.project
     clarification = args.clarification
