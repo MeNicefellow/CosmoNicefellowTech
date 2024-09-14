@@ -167,6 +167,7 @@ def write_to_file(persistent_memory):
     if not os.path.exists(base_path + project_path):
         os.makedirs(base_path + project_path)
     base_path = base_path + project_path + '/'
+    os.rename('conversation_history.txt',base_path+'conversation_history.txt')
     system_design = persistent_memory['system_design']
     code = persistent_memory['code']
     readme = persistent_memory['readme']
