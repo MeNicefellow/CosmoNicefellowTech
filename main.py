@@ -180,9 +180,17 @@ def write_to_file(persistent_memory):
     requirements = persistent_memory['requirements']
     for k,v in requirements.items():
         with open(base_path + k, 'w') as f:
-            f.write(v)
+            if type(v) == dict:
+                v = json.dump(v, f, indent=4)
+            elif type(v) == list:
+                v = '\n'.join(v)
+                f.write(v)
+            elif type(v) == str:
+                f.write(v)
     for file_path, code in code.items():
-        with open(base_path + file_path, 'w') as f:
+        full_path = os.path.join(base_path, file_path)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, 'w') as f:
             f.write(code)   
     with open(base_path + 'readme.md', 'w') as f:
         f.write(readme)

@@ -1,0 +1,10 @@
+body {
+    font-family: Arial, sans-serif;
+}
+#toolbar {
+    margin: 10px;
+}
+#paintingCanvas {
+    border: 1px solid black;
+    margin-top: 20px;
+}
