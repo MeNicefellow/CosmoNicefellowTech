@@ -32,8 +32,7 @@ def chat(query,query_additional, agent1, agent2, project, persistent_memory, cha
     return response
 
 
-def ask_for_user_clarification(project,persistent_memory):
-    chatter = OpenAIBackend()
+def ask_for_user_clarification(project,persistent_memory,chatter):
     ceo = Agent("CEO")
     clarification = ""
     query = f"You are {ceo.literal}. Our customer has a project idea: {project}. If you need clarification from the customer, please provide the questions for the customer. Please try not to ask too many questions. Please put the questions in a json format with \"questions\" as the key and the questions you want to ask as the value."
@@ -66,14 +65,14 @@ def ask_for_user_clarification(project,persistent_memory):
     return clarification
 
 
-def system_designing(project,persistent_memory):
-    chatter = OpenAIBackend()
+def system_designing(project,persistent_memory,chatter):
     ceo = Agent("CEO")
     cpo = Agent("SystemDesigner")
     chat_history = []
     query = "Please design the system architecture for the project required by the customer. Please provide a detailed list of all the files that need to be created, and the functions and classes that need to be written. Please don't include any files that are not in text format because our company doesn't support non-text files."
     query_additional = "For the system design, write in json format with system_design as the key."
     response = chat(query,query_additional, ceo, cpo, project, persistent_memory, chatter, chat_history)
+    print("System design response:",response)
     system_design = str(response['system_design'])
     print("System design:",system_design)
     chat_history.append(agents_names[ceo.role]+": "+query)
@@ -81,8 +80,7 @@ def system_designing(project,persistent_memory):
     return system_design
 
 
-def code_writing(project,persistent_memory):
-    chatter = OpenAIBackend()
+def code_writing(project,persistent_memory,chatter):
     cpo = Agent("CPO")
     programmer = Agent("Programmer")
     chat_history = []
@@ -94,8 +92,7 @@ def code_writing(project,persistent_memory):
     return code
 
 
-def code_reviewing(project,persistent_memory):
-    chatter = OpenAIBackend()
+def code_reviewing(project,persistent_memory,chatter):
     programmer = Agent("Programmer")
     code_reviewer = Agent("CodeReviewer")
     cpo = Agent("CPO")
@@ -121,8 +118,7 @@ def code_reviewing(project,persistent_memory):
         print(f"Time taken: {end_time-start_time} seconds")
     return code
 
-def readme_writing(project,persistent_memory):
-    chatter = OpenAIBackend()
+def readme_writing(project,persistent_memory,chatter):
     ceo = Agent("CEO")
     cpo = Agent("CPO")
     chat_history = []
@@ -133,8 +129,7 @@ def readme_writing(project,persistent_memory):
     return readme_file
 
 
-def requirements_writing(project,persistent_memory):
-    chatter = OpenAIBackend()
+def requirements_writing(project,persistent_memory,chatter):
     ceo = Agent("CEO")
     cpo = Agent("CPO")
     chat_history = []
@@ -145,8 +140,7 @@ def requirements_writing(project,persistent_memory):
     return requirements_file
 
 
-def project_path_determination(project,persistent_memory):
-    chatter = OpenAIBackend()
+def project_path_determination(project,persistent_memory,chatter):
     ceo = Agent("CEO")
     cpo = Agent("CPO")
     chat_history = []
@@ -201,6 +195,8 @@ if __name__ == "__main__":
                     help="The project you want us to work on")
     parser.add_argument('--clarification', type=bool, default=False,
                     help="Whether you want to ask the customer for clarification")
+    parser.add_argument('--backend', type=str, default="openai",
+                    help="The backend you want to use for the conversation")
 
     args = parser.parse_args()
 
@@ -211,12 +207,17 @@ if __name__ == "__main__":
     clarification = args.clarification
     print(f"Project: {project}")
 
+    if args.backend == "openai":
+        chatter = OpenAIBackend()
+    else:
+        chatter = llm_chatter()
+
     persistent_memory = {}
 
     if clarification:
         print("=========\nBegin user clarification\n========="  )
         start_time = time.time()
-        clarification = ask_for_user_clarification(project,persistent_memory)
+        clarification = ask_for_user_clarification(project,persistent_memory,chatter)
         if len(clarification) > 0:
             persistent_memory['clarification'] = clarification
         end_time = time.time()
@@ -228,7 +229,7 @@ if __name__ == "__main__":
     print("=========\nBegin system design\n=========")
     start_time = time.time()
 
-    system_design = system_designing(project,persistent_memory)
+    system_design = system_designing(project,persistent_memory,chatter)
     persistent_memory['system_design'] = system_design
     print("=========\nEnd system design\n=========")
     end_time = time.time()
@@ -237,7 +238,7 @@ if __name__ == "__main__":
     #print("Current persistent memory:",persistent_memory)
     print("=========\nBegin code writing\n=========")
     start_time = time.time()
-    code = code_writing(project,persistent_memory)
+    code = code_writing(project,persistent_memory,chatter)
     persistent_memory['code'] = code
     end_time = time.time()
     print("=========\nEnd code writing\n=========")
@@ -247,7 +248,7 @@ if __name__ == "__main__":
 
     print("=========\nBegin code reviewing\n=========")
     start_time = time.time()
-    code = code_reviewing(project,persistent_memory)
+    code = code_reviewing(project,persistent_memory,chatter)
     persistent_memory['code'] = code
     end_time = time.time()
     print("=========\nEnd code reviewing\n=========")
@@ -257,7 +258,7 @@ if __name__ == "__main__":
 
     print("=========\nBegin readme writing\n=========")
     start_time = time.time()
-    readme_file = readme_writing(project,persistent_memory)
+    readme_file = readme_writing(project,persistent_memory,chatter)
     persistent_memory['readme'] = readme_file
     end_time = time.time()
     print("=========\nEnd readme writing\n=========")
@@ -265,7 +266,7 @@ if __name__ == "__main__":
 
     print("=========\nBegin requirements writing\n=========")
     start_time = time.time()
-    requirements_file = requirements_writing(project,persistent_memory)
+    requirements_file = requirements_writing(project,persistent_memory,chatter)
     persistent_memory['requirements'] = requirements_file
     end_time = time.time()
     print("=========\nEnd requirements writing\n=========")
@@ -273,7 +274,7 @@ if __name__ == "__main__":
 
     print("=========\nBegin project path determination\n=========")
     start_time = time.time()
-    project_path = project_path_determination(project,persistent_memory)
+    project_path = project_path_determination(project,persistent_memory,chatter)
     persistent_memory['project_path'] = project_path
     end_time = time.time()
     print("=========\nEnd project path determination\n=========")
