@@ -3,6 +3,7 @@ import os
 from openai import OpenAI
 import codecs
 import json
+import yaml
 
 class OpenAIBackend:
     def __init__(self, model="gpt-4o-mini"):
@@ -62,28 +63,34 @@ class OpenAIBackend:
             return "Error: Unable to get response from OpenAI API"
 
 
+import codecs
+import requests
+import json
+import yaml  # Import PyYAML module
 
 class llm_chatter:
-    def __init__(self,host='http://127.0.0.1:1234/v1/chat/completions'):
+    def __init__(self, host='http://127.0.0.1:1234/v1/chat/completions'):
         self.host = host
         self.msg_history = []
         self.headers = {
             "Content-Type": "application/json"
         }
-    def communicate(self,prompt,greedy=True,reset=True,max_tokens=2048,template="Llama-v3"):
+
+    def communicate(self, prompt, greedy=True, reset=True, max_tokens=2048, template="Llama-v3"):
         f = codecs.open("conversation_history.txt", "a", "utf-8")
         if reset:
             self.msg_history = []
         self.msg_history.append({"role": "user", "content": prompt})
 
-        f.write("="*10+"\n")
+        f.write("=" * 10 + "\n")
         for item in self.msg_history:
-            f.write(item['role']+":\n"+str(item['content'])+"\n")
+            f.write(item['role'] + ":\n" + str(item['content']) + "\n")
         data = {
             "mode": "instruct",
             "max_tokens": max_tokens,
             #"instruction_template":template,
-                "messages": self.msg_history
+            "messages": self.msg_history,
+            'temperature': 0.001,
         }
         if greedy:
             data['temperature'] = 0
@@ -108,7 +115,21 @@ class llm_chatter:
                 print("-=-=-=-=\nJsonstring:\n")
                 print(json_str)
                 print("-=-=-=-=")
+        # Extract YAML if present
+        elif "```yaml" in assistant_message or "```yml" in assistant_message:
+            yaml_start = assistant_message.index("```yaml") + 7 if "```yaml" in assistant_message else assistant_message.index("```yml") + 6
+            yaml_end = assistant_message.rindex("```", yaml_start)
+            yaml_str = assistant_message[yaml_start:yaml_end].strip()
+            try:
+                assistant_message = yaml.safe_load(yaml_str)  # Parse YAML string into a dictionary
+            except yaml.YAMLError:
+                print("Warning: Failed to parse YAML. Returning original message.")
+                print("-=-=-=-=\nYamlstring:\n")
+                print(yaml_str)
+                print("-=-=-=-=")
+
         return assistant_message
+
 
 class llm_completion:
     def __init__(self,host='http://127.0.0.1:5000/v1/completions'):

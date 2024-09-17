@@ -72,9 +72,9 @@ def system_designing(project,persistent_memory,chatter):
     query = "Please design the system architecture for the project required by the customer. Please provide a detailed list of all the files that need to be created, and the functions and classes that need to be written. Please don't include any files that are not in text format because our company doesn't support non-text files."
     query_additional = "For the system design, write in json format with system_design as the key."
     response = chat(query,query_additional, ceo, cpo, project, persistent_memory, chatter, chat_history)
-    print("System design response:",response)
+    #print("System design response:",response)
     system_design = str(response['system_design'])
-    print("System design:",system_design)
+    #print("System design:",system_design)
     chat_history.append(agents_names[ceo.role]+": "+query)
     chat_history.append(agents_names[cpo.role]+": "+system_design)
     return system_design
@@ -85,10 +85,10 @@ def code_writing(project,persistent_memory,chatter):
     programmer = Agent("Programmer")
     chat_history = []
     query = "Please write the code for the project required by the customer. Please use the system design provided to you to write the code."
-    query_additional = "For the code writing, write in json format with file path as the key and code as the value."
+    query_additional = "For the code writing, write in YAML format with the file path as the key and the code as a multi-line string value."
     response = chat(query,query_additional, cpo, programmer, project, persistent_memory, chatter, chat_history)
     code = response
-    print("Code:",str(response))
+    #print("Code:",str(response))
     return code
 
 
@@ -110,7 +110,7 @@ def code_reviewing(project,persistent_memory,chatter):
             break
         #chat_history.append(agents_names[code_reviewer.role]+": "+response)
         query = "Please write the code again based on the feedback provided by the code reviewer."
-        query_additional = "For the code writing, write in json format with file path as the key and code as the value."
+        query_additional = "For the code writing, write in YAML format with the file path as the key and the code as a multi-line string value."
         response = chat(query,query_additional, cpo, programmer, project, persistent_memory, chatter, chat_history)
         code = response
         persistent_memory['code'] = code
@@ -123,9 +123,13 @@ def readme_writing(project,persistent_memory,chatter):
     cpo = Agent("CPO")
     chat_history = []
     query = "Please write the readme.md file for the project required by the customer. Please use the system design provided to you to write the readme.md file."
-    query_additional = "Please put the content of readme.md in a json format with readme as the key and the content as the value."
+    query_additional = "Please put the content of readme.md in YAML format with README.MD as the key and the content as a multi-line string value."
     response = chat(query,query_additional, ceo, cpo, project, persistent_memory, chatter, chat_history)
-    readme_file = str(response['readme'])   
+    try:
+        readme_file = str(response['README.MD'])
+    except:
+        print("-=-=-=-=\nreadme not properly parsed:",response)
+        readme_file = str(response)
     return readme_file
 
 
