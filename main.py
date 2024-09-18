@@ -85,7 +85,15 @@ def code_writing(project,persistent_memory,chatter):
     programmer = Agent("Programmer")
     chat_history = []
     query = "Please write the code for the project required by the customer. Please use the system design provided to you to write the code."
-    query_additional = "For the code writing, write in YAML format with the file path as the key and the code as a multi-line string value."
+    query_additional = '''For the code writing, write in YAML format with the file path as the key and the code as a multi-line string value. Include only the file name followed by the code content without additional titles. Ensure the format is like this:
+    ```yaml
+    file_name.py: |
+      code content here
+      code content continues...
+    another_file.py: |
+      more code content here
+      ...
+    ```'''
     response = chat(query,query_additional, cpo, programmer, project, persistent_memory, chatter, chat_history)
     code = response
     #print("Code:",str(response))
@@ -110,7 +118,15 @@ def code_reviewing(project,persistent_memory,chatter):
             break
         #chat_history.append(agents_names[code_reviewer.role]+": "+response)
         query = "Please write the code again based on the feedback provided by the code reviewer."
-        query_additional = "For the code writing, write in YAML format with the file path as the key and the code as a multi-line string value."
+        query_additional = '''For the code writing, write in YAML format with the file path as the key and the code as a multi-line string value. Include only the file name followed by the code content without additional titles. Ensure the format is like this:
+        ```yaml
+        file_name.py: |
+          code content here
+          code content continues...
+        another_file.py: |
+          more code content here
+          ...
+        ```'''
         response = chat(query,query_additional, cpo, programmer, project, persistent_memory, chatter, chat_history)
         code = response
         persistent_memory['code'] = code
@@ -149,7 +165,7 @@ def project_path_determination(project,persistent_memory,chatter):
     cpo = Agent("CPO")
     chat_history = []
     query = "Please determine the project name for the project required by the customer. It will be used as the folder name for the project so please don't use any special characters or spaces."
-    query_additional = "Please put the content of project name in a json format with name as the key and the content as the value."
+    query_additional = 'Please put the content of project name in a json format with "name" as the key and the content as the value.'
     response = chat(query,query_additional, ceo, cpo, project, persistent_memory, chatter, chat_history)
     project_path = str(response['name'])
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

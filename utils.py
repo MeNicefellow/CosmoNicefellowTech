@@ -57,6 +57,19 @@ class OpenAIBackend:
                     print(json_str)
                     print("-=-=-=-=")
 
+            # Extract YAML if present
+            elif "```yaml" in assistant_message or "```yml" in assistant_message:
+                yaml_start = assistant_message.index(
+                    "```yaml") + 7 if "```yaml" in assistant_message else assistant_message.index("```yml") + 6
+                yaml_end = assistant_message.rindex("```", yaml_start)
+                yaml_str = assistant_message[yaml_start:yaml_end].strip()
+                try:
+                    assistant_message = yaml.safe_load(yaml_str)  # Parse YAML string into a dictionary
+                except yaml.YAMLError:
+                    print("Warning: Failed to parse YAML. Returning original message.")
+                    print("-=-=-=-=\nYamlstring:\n")
+                    print(yaml_str)
+                    print("-=-=-=-=")
             return assistant_message
         except Exception as e:
             print(f"Error communicating with OpenAI API: {str(e)}")
@@ -76,7 +89,7 @@ class llm_chatter:
             "Content-Type": "application/json"
         }
 
-    def communicate(self, prompt, greedy=True, reset=True, max_tokens=2048, template="Llama-v3"):
+    def communicate(self, prompt, greedy=True, reset=True, max_tokens=8192, template="Llama-v3"):
         f = codecs.open("conversation_history.txt", "a", "utf-8")
         if reset:
             self.msg_history = []
