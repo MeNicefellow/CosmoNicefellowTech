@@ -29,7 +29,7 @@ Cosmo Nicefellow Tech leverages the power of large language models (LLMs) to cre
    pip install -r requirements.txt
    ```
 3. Set up your API key:
-   
+
    Put your OpenAI API key in a file called .openai_api_key in your home directory.
 
 4. Run the main script:
@@ -37,9 +37,18 @@ Cosmo Nicefellow Tech leverages the power of large language models (LLMs) to cre
    python main.py --project "Your project description"
    ```
 
-5. The product will be written in the workspace directory.
+5. To run the Streamlit based web UI:
+   ```
+   streamlit run main_web.py
+   ```
+
+6. The product will be written in the workspace directory.
 
    **Note**: The workspace directory will contain both the generated project files and some example projects created by the system. You can explore these examples to see how Cosmo Nicefellow Tech works with different project types.
+
+## 📸 Web UI Screenshot
+
+![Web UI Screenshot](assets/screenshot.png)
 
 ## 🛠️ System Components
 
