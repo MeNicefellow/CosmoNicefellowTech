@@ -25,12 +25,13 @@ def chat(query, query_additional, agent1, agent2, project, persistent_memory, ch
 def main():
     st.set_page_config(page_title="Cosmo Nicefellow Tech", layout="wide")
 
-    # Arrange the title and the image in columns
-    col1, col2 = st.columns([3, 1])  # Adjust column widths as needed
+    # Adjust the column ratio to give more space to the title
+    col1, col2 = st.columns([4, 1])  # 4 parts for title, 1 part for image
     with col1:
         st.title("Cosmo Nicefellow Tech")
     with col2:
-        st.image("assets/cosmo-nicefellow-tech-office.png", width=500)  # Adjust width as needed
+        st.image("assets/cosmo-nicefellow-tech-office.png", width=300)  # Reduce the width of the image
+
 
 
     # Initialize session state
@@ -60,12 +61,12 @@ def main():
     if 'project_path_done' not in st.session_state:
         st.session_state['project_path_done'] = False
 
-    st.title("Virtual Software Development")
+    st.title("Cosmo Nicefellow Tech")
 
     # Input section
     st.sidebar.header("Project Settings")
     st.session_state['project'] = st.sidebar.text_area("Software Requirement", st.session_state['project'])
-    st.session_state['clarification'] = st.sidebar.checkbox("CEO asks for clarification", st.session_state['clarification'])
+    st.session_state['clarification'] = st.sidebar.checkbox("Allow CEO to ask for clarification", st.session_state['clarification'])
     if st.sidebar.button("Start Project"):
         st.session_state['clarification_done'] = False
         st.session_state['system_design_done'] = False
@@ -92,6 +93,7 @@ def main():
                     query = f"You are {ceo.literal}. Our customer has a project idea: {st.session_state['project']}. If you need clarification from the customer, please provide the questions for the customer. Please try not to ask too many questions. Please put the questions in a json format with \"questions\" as the key and the questions you want to ask as the value."
                     response = st.session_state['chatter'].communicate(query)
                     try:
+                        print("response:", response)
                         questions = json.loads(response)['questions']
                     except:
                         questions = response
@@ -100,9 +102,10 @@ def main():
                     for q in questions:
                         st.write(f"- {q}")
                     # User provides answers
-                    st.session_state['clarification_answers'] = st.text_area("Your Answers", key='clarification_answers')
+                    clarification_answers = st.text_area("Your Answers", key='clarification_answers')
+
                     if st.button("Submit Answers"):
-                        answer = st.session_state['clarification_answers']
+                        answer = clarification_answers
                         while True:
                             query = f"The customer has answered your questions with the following: {answer}. Please determine if you need more information from the customer. If so, please put the questions for the customer in a json format with \"questions\" as the key and the questions you want to ask as the value. If not, please put \"no\" as the value."
                             response = st.session_state['chatter'].communicate(query, reset=False)
@@ -128,8 +131,9 @@ def main():
                                 for q in questions:
                                     st.write(f"- {q}")
                                 # Get additional answers
-                                answer = st.text_area("Your Additional Answers", key='additional_answers')
+                                additional_answers = st.text_area("Your Additional Answers", key='additional_answers')
                                 if st.button("Submit Additional Answers"):
+                                    answer = additional_answers
                                     pass  # Loop continues
                         st.session_state['clarification_done'] = True
             else:
@@ -330,8 +334,10 @@ def write_to_file(persistent_memory):
         with open(base_path + 'clarification.txt', 'w') as f:
             f.write(clarification)
     with open(base_path + 'system_design.txt', 'w') as f:
-        print("type(system_design):", type(system_design))
-        f.write(system_design)
+        if type(system_design) == dict:
+            json.dump(system_design, f, indent=4)
+        else:
+            f.write(system_design)
     requirements = persistent_memory['requirements']
     for k, v in requirements.items():
         with open(base_path + k, 'w') as f:
