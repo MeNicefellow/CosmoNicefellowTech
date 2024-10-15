@@ -63,8 +63,6 @@ def main():
         st.session_state['requirements_done'] = False
     if 'project_path_done' not in st.session_state:
         st.session_state['project_path_done'] = False
-    if 'current_stage' not in st.session_state:
-        st.session_state['current_stage'] = 0
 
     st.title("Cosmo Nicefellow Tech")
 
@@ -89,21 +87,6 @@ def main():
     # Tabs for each stage
     tabs = st.tabs(stages)
 
-    # Update current stage state dynamically based on progress
-    #if not st.session_state['clarification_done']:
-    #    st.session_state['current_stage'] = 0
-    #elif not st.session_state['system_design_done']:
-    #    st.session_state['current_stage'] = 1
-    #elif not st.session_state['code_writing_done']:
-    #    st.session_state['current_stage'] = 2
-    #elif not st.session_state['code_reviewing_done']:
-    #    st.session_state['current_stage'] = 3
-    #elif not st.session_state['readme_done']:
-    #    st.session_state['current_stage'] = 4
-    #elif not st.session_state['requirements_done']:
-    #    st.session_state['current_stage'] = 5
-    #elif not st.session_state['project_path_done']:
-    #    st.session_state['current_stage'] = 6
 
     # Stage 1: Goal Setting
     with tabs[0]:

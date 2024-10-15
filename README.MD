@@ -39,7 +39,7 @@ Cosmo Nicefellow Tech leverages the power of large language models (LLMs) to cre
 
 5. To run the Streamlit based web UI:
    ```
-   streamlit run main_web.py
+   streamlit run main_webui.py
    ```
 
 6. The product will be written in the workspace directory.
