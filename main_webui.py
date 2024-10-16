@@ -63,13 +63,14 @@ def main():
         st.session_state['requirements_done'] = False
     if 'project_path_done' not in st.session_state:
         st.session_state['project_path_done'] = False
+    if 'current_stage' not in st.session_state:
+        st.session_state['current_stage'] = 0
 
-    st.title("Cosmo Nicefellow Tech")
-
-    # Add progress bar
+    # Sidebar and project settings
     st.sidebar.header("Project Settings")
     st.session_state['project'] = st.sidebar.text_area("Software Requirement", st.session_state['project'])
-    st.session_state['clarification'] = st.sidebar.checkbox("Allow CEO to ask for clarification", st.session_state['clarification'])
+    st.session_state['clarification'] = st.sidebar.checkbox("Allow CEO to ask for clarification",
+                                                            st.session_state['clarification'])
     if st.sidebar.button("Start Project"):
         st.session_state['clarification_done'] = False
         st.session_state['system_design_done'] = False
@@ -80,13 +81,10 @@ def main():
         st.session_state['project_path_done'] = False
         st.session_state['persistent_memory'] = {}
         st.session_state['conversation_history'] = []
-    #st.sidebar.progress((st.session_state['current_stage'] + 1) / len(stages))
-    st.session_state['current_stage'] = 0
-    #st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
+        st.session_state['current_stage'] = 0
 
     # Tabs for each stage
     tabs = st.tabs(stages)
-
 
     # Stage 1: Goal Setting
     with tabs[0]:
@@ -97,14 +95,15 @@ def main():
             if st.session_state['clarification']:
                 if not st.session_state['clarification_done']:
                     # CEO asks for clarification
-                    ceo = Agent("CEO")
-                    query = f"You are {ceo.literal}. Our customer has a project idea: {st.session_state['project']}. If you need clarification from the customer, please provide the questions for the customer. Please try not to ask too many questions. Please put the questions in a json format with \"questions\" as the key and the questions you want to ask as the value."
-                    response = st.session_state['chatter'].communicate(query)
-                    try:
-                        questions = json.loads(response)['questions']
-                    except:
-                        questions = response
-                    st.session_state['clarification_questions'] = questions
+                    if 'clarification_questions' not in st.session_state:
+                        ceo = Agent("CEO")
+                        query = f"You are {ceo.literal}. Our customer has a project idea: {st.session_state['project']}. If you need clarification from the customer, please provide the questions for the customer. Please try not to ask too many questions. Please put the questions in a json format with \"questions\" as the key and the questions you want to ask as the value."
+                        response = st.session_state['chatter'].communicate(query)
+                        print("Response:", type(response), response)
+                        questions = response.get('questions', [])
+                        st.session_state['clarification_questions'] = questions
+                    else:
+                        questions = st.session_state['clarification_questions']
                     st.write(f"**Questions from CEO:**")
                     for q in questions:
                         st.write(f"- {q}")
@@ -120,14 +119,14 @@ def main():
                                 questions = 'no'
                             else:
                                 try:
-                                    questions = json.loads(response)['questions']
+                                    questions = json.loads(response).get('questions', 'no')
                                 except:
                                     questions = response
                             if questions == "no":
                                 query = f"Please summarize the customer's answers to your questions and provide a clear and concise summary. Please put the summary in a json format with \"summary\" as the key and the summary as the value."
                                 response = st.session_state['chatter'].communicate(query, reset=False)
                                 try:
-                                    summary = response['summary']
+                                    summary = response.get('summary', '')
                                 except:
                                     summary = response
                                 st.write(f"**CEO's Summary:** {summary}")
@@ -143,8 +142,10 @@ def main():
                                     answer = additional_answers
                                     pass  # Loop continues
                         st.session_state['clarification_done'] = True
+                else:
+                    st.write("Clarification completed.")
             else:
-                st.write("No clarification requested.")
+                st.write("No clarification requested yet or being processed.")
             st.sidebar.write(f"Stage: **{stages[st.session_state['current_stage']]}** completed.")
         else:
             st.write("Please enter a project description in the sidebar to start.")
@@ -153,28 +154,29 @@ def main():
     with tabs[1]:
         st.header("System Design")
         if st.session_state['project']:
-            if not st.session_state['system_design_done']:
-                st.session_state['current_stage'] += 1
-                st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
-                ceo = Agent("CEO")
-                cpo = Agent("SystemDesigner")
-                chat_history = []
-                query = "Please design the system architecture for the project required by the customer. Please provide a detailed list of all the files that need to be created, and the functions and classes that need to be written. Please don't include any files that are not in text format because our company doesn't support non-text files."
-                query_additional = "For the system design, write in json format with system_design as the key."
-                response = chat(query, query_additional, ceo, cpo, st.session_state['project'],
-                                st.session_state['persistent_memory'], st.session_state['chatter'], chat_history)
-                try:
-                    system_design = response['system_design']
-                except:
-                    system_design = response
-                st.session_state['persistent_memory']['system_design'] = system_design
-                st.write(f"**System Design:**")
-                st.json(system_design)
-                st.session_state['system_design_done'] = True
-                st.sidebar.write(f"Stage: **{stages[st.session_state['current_stage']]}** completed.")
+            # Only proceed if the clarification is done or not needed
+            if st.session_state['clarification_done'] or not st.session_state['clarification']:
+                if not st.session_state['system_design_done']:
+                    st.session_state['current_stage'] = 1
+                    st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
+                    ceo = Agent("CEO")
+                    cpo = Agent("SystemDesigner")
+                    chat_history = []
+                    query = "Please design the system architecture for the project required by the customer. Please provide a detailed list of all the files that need to be created, and the functions and classes that need to be written. Please don't include any files that are not in text format because our company doesn't support non-text files."
+                    query_additional = "For the system design, write in json format with system_design as the key."
+                    response = chat(query, query_additional, ceo, cpo, st.session_state['project'],
+                                    st.session_state['persistent_memory'], st.session_state['chatter'], chat_history)
+                    system_design = response.get('system_design', response)
+                    st.session_state['persistent_memory']['system_design'] = system_design
+                    st.write(f"**System Design:**")
+                    st.json(system_design)
+                    st.session_state['system_design_done'] = True
+                    st.sidebar.write(f"Stage: **{stages[st.session_state['current_stage']]}** completed.")
+                else:
+                    st.write(f"**System Design:**")
+                    st.json(st.session_state['persistent_memory']['system_design'])
             else:
-                st.write(f"**System Design:**")
-                st.json(st.session_state['persistent_memory']['system_design'])
+                st.write("Please complete the Goal Setting stage first.")
         else:
             st.write("Please enter a project description in the sidebar to start.")
 
@@ -183,7 +185,7 @@ def main():
         st.header("Programming")
         if st.session_state['system_design_done']:
             if not st.session_state['code_writing_done']:
-                st.session_state['current_stage'] += 1
+                st.session_state['current_stage'] = 2
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 cpo = Agent("CPO")
                 programmer = Agent("Programmer")
@@ -220,7 +222,7 @@ def main():
         st.header("Code Reviewing")
         if st.session_state['code_writing_done']:
             if not st.session_state['code_reviewing_done']:
-                st.session_state['current_stage'] += 1
+                st.session_state['current_stage'] = 3
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 programmer = Agent("Programmer")
                 code_reviewer = Agent("CodeReviewer")
@@ -263,7 +265,7 @@ def main():
         st.header("Documentation")
         if st.session_state['code_reviewing_done']:
             if not st.session_state['readme_done']:
-                st.session_state['current_stage'] += 1
+                st.session_state['current_stage'] = 4
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 ceo = Agent("CEO")
                 cpo = Agent("CPO")
@@ -271,10 +273,7 @@ def main():
                 query = "Please write the readme.md file for the project required by the customer. Please use the system design provided to you to write the readme.md file."
                 query_additional = "Please put the content of readme.md in YAML format with README.MD as the key and the content as a multi-line string value."
                 response = chat(query, query_additional, ceo, cpo, st.session_state['project'], st.session_state['persistent_memory'], st.session_state['chatter'], chat_history)
-                try:
-                    readme_file = response['README.MD']
-                except:
-                    readme_file = response
+                readme_file = response.get('README.MD', response)
                 st.session_state['persistent_memory']['readme'] = readme_file
                 st.session_state['readme_done'] = True
                 st.sidebar.write(f"Stage: **{stages[st.session_state['current_stage']]}** completed.")
@@ -290,7 +289,7 @@ def main():
         st.header("Requirement Writing")
         if st.session_state['readme_done']:
             if not st.session_state['requirements_done']:
-                st.session_state['current_stage'] += 1
+                st.session_state['current_stage'] = 5
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 ceo = Agent("CEO")
                 cpo = Agent("CPO")
@@ -316,7 +315,7 @@ def main():
         st.header("Project Path")
         if st.session_state['requirements_done']:
             if not st.session_state['project_path_done']:
-                st.session_state['current_stage'] += 1
+                st.session_state['current_stage'] = 6
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 ceo = Agent("CEO")
                 cpo = Agent("CPO")
@@ -324,12 +323,9 @@ def main():
                 query = "Please determine the project name for the project required by the customer. It will be used as the folder name for the project so please don't use any special characters or spaces."
                 query_additional = 'Please put the content of project name in a json format with "name" as the key and the content as the value.'
                 response = chat(query, query_additional, ceo, cpo, st.session_state['project'], st.session_state['persistent_memory'], st.session_state['chatter'], chat_history)
-                try:
-                    project_path = response['name']
-                except:
-                    project_path = response
+                project_name = response.get('name', response)
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                project_path = f"{project_path}_{timestamp}"
+                project_path = f"{project_name}_{timestamp}"
                 st.session_state['persistent_memory']['project_path'] = project_path
                 st.session_state['project_path_done'] = True
                 st.sidebar.write(f"Stage: **{stages[st.session_state['current_stage']]}** completed.")
@@ -343,6 +339,7 @@ def main():
         else:
             st.write("Please complete the Requirement Writing stage first.")
 
+
 def write_to_file(persistent_memory):
     base_path = 'work_space/'
     project_path = persistent_memory['project_path']
@@ -352,7 +349,7 @@ def write_to_file(persistent_memory):
     if not os.path.exists(base_path + project_path):
         os.makedirs(base_path + project_path)
     base_path = base_path + project_path + '/'
-    #os.rename('conversation_history.txt', base_path+'conversation_history.txt')
+    # os.rename('conversation_history.txt', base_path+'conversation_history.txt')
     system_design = persistent_memory['system_design']
     code = persistent_memory['code']
     readme = persistent_memory['readme']
@@ -361,7 +358,7 @@ def write_to_file(persistent_memory):
         with open(base_path + 'clarification.txt', 'w') as f:
             f.write(clarification)
     with open(base_path + 'system_design.txt', 'w') as f:
-        if type(system_design) == dict:
+        if isinstance(system_design, dict):
             json.dump(system_design, f, indent=4)
         else:
             f.write(system_design)
@@ -383,6 +380,7 @@ def write_to_file(persistent_memory):
                 f.write(code_content)
     with open(base_path + 'readme.md', 'w') as f:
         f.write(readme)
+
 
 if __name__ == "__main__":
     main()
