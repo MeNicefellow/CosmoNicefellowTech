@@ -154,9 +154,11 @@ def main():
     with tabs[1]:
         st.header("System Design")
         if st.session_state['project']:
+            time.sleep(2)
             # Only proceed if the clarification is done or not needed
             if st.session_state['clarification_done'] or not st.session_state['clarification']:
                 if not st.session_state['system_design_done']:
+                    print("begin system design",st.session_state['clarification_done'], not st.session_state['clarification'])
                     st.session_state['current_stage'] = 1
                     st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                     ceo = Agent("CEO")
@@ -185,6 +187,7 @@ def main():
         st.header("Programming")
         if st.session_state['system_design_done']:
             if not st.session_state['code_writing_done']:
+                print("begin code writing")
                 st.session_state['current_stage'] = 2
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 cpo = Agent("CPO")
@@ -222,6 +225,7 @@ def main():
         st.header("Code Reviewing")
         if st.session_state['code_writing_done']:
             if not st.session_state['code_reviewing_done']:
+                print("begin code reviewing")
                 st.session_state['current_stage'] = 3
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 programmer = Agent("Programmer")
@@ -265,6 +269,7 @@ def main():
         st.header("Documentation")
         if st.session_state['code_reviewing_done']:
             if not st.session_state['readme_done']:
+                print("Begin documentation")
                 st.session_state['current_stage'] = 4
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 ceo = Agent("CEO")
@@ -289,6 +294,7 @@ def main():
         st.header("Requirement Writing")
         if st.session_state['readme_done']:
             if not st.session_state['requirements_done']:
+                print("Begin requirement writing")
                 st.session_state['current_stage'] = 5
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 ceo = Agent("CEO")
@@ -315,6 +321,7 @@ def main():
         st.header("Project Path")
         if st.session_state['requirements_done']:
             if not st.session_state['project_path_done']:
+                print("begin to save project")
                 st.session_state['current_stage'] = 6
                 st.sidebar.write(f"Current Stage: **{stages[st.session_state['current_stage']]}**")
                 ceo = Agent("CEO")
